@@ -275,7 +275,7 @@ class CCSocket:NSObject {
     }
     
     func libraryVersion() -> String{
-        let libraryVersion = Bundle.init(identifier: "com.crowdConnected.CCLocation")?.object(forInfoDictionaryKey: "CFBundleVersion") as! NSString
+        let libraryVersion = CCSocketConstants.LIBRARY_VERSION_TO_REPORT
         return String(format: "&libVersion=%@" , libraryVersion)
     }
     

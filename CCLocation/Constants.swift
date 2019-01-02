@@ -23,12 +23,13 @@ struct CCLocationConstants {
 }
 
 struct CCSocketConstants {
-    static let LAST_DEVICE_ID_KEY = "LastDeviceId";
+    static let LIBRARY_VERSION_TO_REPORT = "2.0.11"
+    static let LAST_DEVICE_ID_KEY = "LastDeviceId"
     static let MIN_DELAY: Double = 1 * 1000
     static let MAX_DELAY: Double = 60 * 60 * 1000
-    static let MAX_CYCLE_DELAY: Double = 24 * 60 * 60 * 1000;
-    static let WS_PREFIX = "wss://";
-    static let ALIAS_KEY = "Aliases";
+    static let MAX_CYCLE_DELAY: Double = 24 * 60 * 60 * 1000
+    static let WS_PREFIX = "wss://"
+    static let ALIAS_KEY = "Aliases"
 }
 
 struct CCRequestMessagingConstants {
