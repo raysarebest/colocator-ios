@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name                  = 'CCLocation'
-  s.version               = '2.0.13'
+  s.version               = '2.0.14'
   s.summary               = 'The CrowdConnected colocator iOS library'
   s.homepage              = 'https://github.com/crowdconnected/colocator-ios.git'
   s.social_media_url      = 'https://twitter.com/crowdconnected'
@@ -11,7 +11,8 @@ Pod::Spec.new do |s|
 
   s.documentation_url     = 'https://developers.colocator.net'
 
-  s.source_files          = 'CCLocation/**/*.swift','CCLocation/certificate.der'
+  s.source_files          = 'CCLocation/**/*.swift'
+  s.resource_bundle       = {'CCLocation' => 'CCLocation/certificate.der'}
   s.module_name           = 'CCLocation'
 
   s.ios.deployment_target = '9.0'
