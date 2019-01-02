@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
 
   s.documentation_url     = 'https://developers.colocator.net'
 
-  s.source_files          = 'CCLocation/*.swift'
+  s.source_files          = 'CCLocation/**/*.swift'
   s.module_name           = 'CCLocation'
 
   s.ios.deployment_target = '9.0'
