@@ -29,7 +29,7 @@ class CCSocket:NSObject {
     var ccWebsocketBaseURL: String?
     var ccLocationManager: CCLocationManager?
     var ccRequestMessaging: CCRequestMessaging?
-    var delay: Double?
+    var delay: Double = 0
     
     var maxCycleTimer: Timer?
     var firstReconnect: Bool = true
@@ -180,31 +180,29 @@ class CCSocket:NSObject {
     }
     
     public func delayReconnect(){
-        if (self.delay == 0){
-            self.delay = CCSocketConstants.MIN_DELAY
+        if (delay == 0){
+            delay = CCSocketConstants.MIN_DELAY
         }
         
-        guard let delay = self.delay else {
-            return
+        if pingTimer != nil{
+            pingTimer!.invalidate()
         }
+
+        Log.debug("Trying to reconnect in \(round((delay / 1000) * 100) / 100) s")
         
-        if self.pingTimer != nil{
-            self.pingTimer!.invalidate()
-        }
-        
-        self.reconnectTimer = Timer.scheduledTimer(timeInterval: delay/1000, target: self, selector: #selector(self.connect(timer:)), userInfo: nil, repeats: false)
+        reconnectTimer = Timer.scheduledTimer(timeInterval: delay/1000, target: self, selector: #selector(self.connect(timer:)), userInfo: nil, repeats: false)
         
         if (delay * 1.2 < CCSocketConstants.MAX_DELAY){
-            self.delay = delay * 1.2
-        }else{
-            self.delay = CCSocketConstants.MAX_DELAY
+            delay = delay * 1.2
+        } else {
+            delay = CCSocketConstants.MAX_DELAY
         }
         
-        if (self.maxCycleTimer == nil && self.firstReconnect){
-            self.maxCycleTimer = Timer.scheduledTimer(timeInterval: CCSocketConstants.MAX_CYCLE_DELAY / 1000, target: self, selector: #selector(self.stopCycler(timer:)), userInfo: nil, repeats: false)
+        if (maxCycleTimer == nil && firstReconnect) {
+            maxCycleTimer = Timer.scheduledTimer(timeInterval: CCSocketConstants.MAX_CYCLE_DELAY / 1000, target: self, selector: #selector(self.stopCycler(timer:)), userInfo: nil, repeats: false)
         }
         
-        self.firstReconnect = false
+        firstReconnect = false
     }
     
     public func setAliases(aliases: Dictionary<String, String>){
@@ -377,6 +375,15 @@ class CCSocket:NSObject {
         if (platform.isEqual(to:"i386"))         {return "Simulator"}
         if (platform.isEqual(to:"x86_64"))       {return "Simulator"}
         return platform as String;
+    }
+    
+    deinit {
+        //        DDLogVerbose("CCRequestMessaging DEINIT")
+        //        if #available(iOS 10.0, *) {
+        //            os_log("[CC] CCRequestMessaging DEINIT")
+        //        } else {
+        //            // Fallback on earlier versions
+        //        }
     }
 }
 

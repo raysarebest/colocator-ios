@@ -83,7 +83,7 @@ class Log {
     ///   - line: Line number in file from where the logging is done
     ///   - column: Column number of the log message
     ///   - funcName: Name of the function from where the logging is done
-    class func i ( _ object: Any, filename: String = #file, line: Int = #line, column: Int = #column, funcName: String = #function) {
+    class func info ( _ object: Any, filename: String = #file, line: Int = #line, column: Int = #column, funcName: String = #function) {
         if isLoggingEnabled {
             print("\(Date().toString()) \(LogEvent.i.rawValue)[\(sourceFileName(filePath: filename))]:\(line) -> \(object)")
         }

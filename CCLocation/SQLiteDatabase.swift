@@ -47,8 +47,8 @@ class SQLiteDatabase {
     
     var messagesBuffer : [CCMessage] = [CCMessage] ()
     var eddystoneBeaconBuffer : [EddystoneBeacon] = [EddystoneBeacon] ()
-    var ibeaconBeaconBuffer : [Beacon] = [Beacon]()
-    var messagesBufferClearTimer : Timer?
+    var ibeaconBeaconBuffer : [Beacon] = [Beacon] ()
+    weak var messagesBufferClearTimer : Timer?
     let serialMessageDatabaseQueue = DispatchQueue(label: "com.crowdConnected.serielMessageDatabaseQueue")
     let serialiBeaconDatabaseQueue = DispatchQueue(label: "com.crowdConnected.serieliBeaconDatabaseQueue")
     let serialEddystoneDatabaseQueue = DispatchQueue(label: "com.crowdConnected.EddystoneDatabaseQueue")
@@ -69,7 +69,19 @@ class SQLiteDatabase {
         messagesBufferClearTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1), target: self, selector: #selector(clearBuffers), userInfo: nil, repeats: true)
     }
     
+    func close () {
+        if messagesBufferClearTimer != nil {
+            messagesBufferClearTimer?.invalidate()
+            messagesBufferClearTimer = nil
+        }
+        sqlite3_close(dbPointer)
+    }
+    
     deinit {
+        if messagesBufferClearTimer != nil {
+            messagesBufferClearTimer?.invalidate()
+            messagesBufferClearTimer = nil
+        }
         sqlite3_close(dbPointer)
     }
     

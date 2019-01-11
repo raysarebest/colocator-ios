@@ -30,6 +30,8 @@ class CCRequestMessaging: NSObject {
     var currentLibraryTimerState: LibraryTimeState?
     var currentCapabilityState: CapabilityState?
     
+    var workItems: [DispatchWorkItem] = []
+    
     internal var messagesDB: SQLiteDatabase!
     internal let messagesDBName = "observations.db"
     
@@ -874,12 +876,16 @@ class CCRequestMessaging: NSObject {
     
     // MARK: - STATE HANDLING FUNCTIONS
     
-    public func webSocketDidOpen(){
-        stateStore.dispatch(WebSocketAction(connectionState: ConnectionState.online))
+    public func webSocketDidOpen() {
+        if stateStore != nil {
+            stateStore.dispatch(WebSocketAction(connectionState: ConnectionState.online))
+        }
     }
     
-    public func webSocketDidClose(){
-        stateStore.dispatch(WebSocketAction(connectionState: ConnectionState.offline))
+    public func webSocketDidClose() {
+        if stateStore != nil {
+            stateStore.dispatch(WebSocketAction(connectionState: ConnectionState.offline))
+        }
     }
     
     // MARK: - HIGH LEVEL SEND CLIENT MESSAGE DATA
@@ -904,9 +910,7 @@ class CCRequestMessaging: NSObject {
                 // case for iBeacon + GEO + Marker + Alias + Bluetooth + Latency messages and buffer timer not set
                 if (timeBetweenSends == nil || timeBetweenSends == 0){
                     Log.verbose("Websocket is open, buffer timer is not available, sending new and queued messages")
-                    DispatchQueue.global(qos: .background).async() {
-                        self.sendQueuedClientMessages(firstMessage: data)
-                    }
+                    self.sendQueuedClientMessages(firstMessage: data)
                 } else {
                     // case for iBeacon + GEO + Marker + Alias + Bluetooth messages, when buffer timer is set
                     if (messageType == .queueable){
@@ -926,9 +930,7 @@ class CCRequestMessaging: NSObject {
                     // case for Latency Message, when buffer timer is set
                     if (messageType == .discardable){
                         //DDLogVerbose("Message is discardable (most likely latency message), buffer timer active, Websocket is online, sending new and queued messages")
-                        DispatchQueue.global(qos: .background).async() {
-                            self.sendQueuedClientMessages(firstMessage: data)
-                        }
+                        sendQueuedClientMessages(firstMessage: data)
                     }
                 }
             }
@@ -965,9 +967,7 @@ class CCRequestMessaging: NSObject {
         
         // make sure that websocket is actually online before trying to send any messages
         if stateStore.state.ccRequestMessagingState.webSocketState?.connectionState == .online {
-            DispatchQueue.global(qos: .background).async() {
-                self.sendQueuedClientMessages(firstMessage: nil)
-            }
+            self.sendQueuedClientMessages(firstMessage: nil)
         }
     }
     
@@ -982,6 +982,7 @@ class CCRequestMessaging: NSObject {
     public func sendQueuedClientMessages(firstMessage: Data?) {
         
         var compiledClientMessageData: Data?
+        var workItem: DispatchWorkItem!
         
         if (firstMessage != nil){
             Log.verbose("Received a new message, pushing new message into message queue")
@@ -1014,309 +1015,338 @@ class CCRequestMessaging: NSObject {
             return count
         }
         
-        while (messagesCount() > 0 &&  stateStore.state.ccRequestMessagingState.webSocketState?.connectionState == .online) {
-            compiledClientMessageData = getCompiledClientMessageData(maxMessagesToReturn: 10)
+        workItem = DispatchWorkItem { [weak self] in
             
-            // a nil case can happen on connect, when a cachepackagesize system message was received and the cache is supposed to be flushed
-            guard let unwrappedData = compiledClientMessageData else {
-                Log.verbose("No client data to send.")
-                return
-            }
-            
-            //            Log.verbose("Sending \(unwrappedData.count) bytes of compiled client message data")
-            ccSocket?.sendWebSocketMessage(data: unwrappedData)
-        }
-    }
-    
-    func getCompiledClientMessageData (maxMessagesToReturn: Int) -> Data? {
-        
-        var compiledClientMessage = Messaging_ClientMessage()
-        var backToQueueMessages = Messaging_ClientMessage()
-        
-        var tempMessageData:[Data]?
-        var subMessageCounter:Int = 0
-        var tempClientMessage:Messaging_ClientMessage?
-        
-        
-        // inline function to get the message count and handle any errors from SQL
-        let messagesCount = {() -> Int in
-            
-            var count:Int = -1
-            
-            do {
-                count = try self.messagesDB.count(table: CCLocationTables.MESSAGES_TABLE)
-            } catch SQLiteError.Prepare(let error) {
-                Log.error("SQL Prepare Error: \(error)")
-            } catch {
-                Log.error("Error while executing messagesDB.count \(error)")
-            }
-            
-            return count
-        }
-        
-        if (messagesCount() == 0) {
-            Log.verbose ("No queued messages available to send")
-        }
-        
-        Log.verbose ("\(messagesCount()) Queued messages are available")
-        
-        while (messagesCount() > 0 && subMessageCounter < maxMessagesToReturn) {
-            
-            if let database = self.messagesDB {
-                do {
-                    tempMessageData = try database.popMessages(num: maxMessagesToReturn)
-                } catch SQLiteError.Prepare(let error) {
-                    Log.error("SQL Prepare Error: \(error)")
-                } catch {
-                    Log.error("Error while executing messagesDB.popMessage \(error)")
-                }
-            }
-            
-            for tempMessage in tempMessageData! {
-                tempClientMessage = try? Messaging_ClientMessage(serializedData: tempMessage)
+            if !workItem.isCancelled {
                 
-                if (tempClientMessage!.locationMessage.count > 0) {
-                    //                DDLogVerbose ("Found location message in queue")
+                let maxMessagesToReturn = 100
+                
+                var connectionState = self?.stateStore.state.ccRequestMessagingState.webSocketState?.connectionState
+                
+                while (messagesCount() > 0 && connectionState == .online) {
                     
-                    for tempLocationMessage in tempClientMessage!.locationMessage {
+                    if workItem.isCancelled { break }
+                
+                    connectionState = self?.stateStore.state.ccRequestMessagingState.webSocketState?.connectionState
+                    
+                    var compiledClientMessage = Messaging_ClientMessage()
+                    var backToQueueMessages = Messaging_ClientMessage()
+                    
+                    var tempMessageData:[Data]?
+                    var subMessageCounter:Int = 0
+                    var tempClientMessage:Messaging_ClientMessage?
+                    
+                    // inline function to get the message count and handle any errors from SQL
+                    let messagesCount = {() -> Int in
                         
-                        var locationMessage = Messaging_LocationMessage()
+                        var count:Int = -1
                         
-                        locationMessage.longitude = tempLocationMessage.longitude
-                        locationMessage.latitude = tempLocationMessage.latitude
-                        locationMessage.horizontalAccuracy = tempLocationMessage.horizontalAccuracy
-                        
-                        if (tempLocationMessage.hasAltitude){
-                            locationMessage.altitude = tempLocationMessage.altitude
+                        do {
+                            if let messagesDB = self?.messagesDB {
+                                count = try messagesDB.count(table: CCLocationTables.MESSAGES_TABLE)
+                            }
+                        } catch SQLiteError.Prepare(let error) {
+                            Log.error("SQL Prepare Error: \(error)")
+                        } catch {
+                            Log.error("Error while executing messagesDB.count \(error)")
                         }
                         
-                        locationMessage.timestamp = tempLocationMessage.timestamp
+                        return count
+                    }
+                    
+                    if (messagesCount() == 0) {
+                        Log.verbose ("No queued messages available to send")
+                    }
+                    
+                    Log.verbose ("\(messagesCount()) Queued messages are available")
+                    
+                    while (messagesCount() > 0 && subMessageCounter < maxMessagesToReturn) {
                         
-                        if (subMessageCounter >= 0) {
-                            compiledClientMessage.locationMessage.append(locationMessage)
-                        } else {
-                            backToQueueMessages.locationMessage.append(locationMessage)
+                        if workItem.isCancelled { break }
+                        
+                        if let database = self?.messagesDB {
+                            do {
+                                tempMessageData = try database.popMessages(num: maxMessagesToReturn)
+                            } catch SQLiteError.Prepare(let error) {
+                                Log.error("SQL Prepare Error: \(error)")
+                            } catch {
+                                Log.error("Error while executing messagesDB.popMessage \(error)")
+                            }
                         }
                         
-                        subMessageCounter += 1
-                    }
-                }
-                
-                if (tempClientMessage!.bluetoothMessage.count > 0) {
-                    
-                    //                DDLogVerbose ("Found bluetooth message in queue")
-                    
-                    for tempBluetoothMessage in tempClientMessage!.bluetoothMessage {
-                        
-                        var bluetoothMessage = Messaging_Bluetooth()
-                        
-                        bluetoothMessage.identifier = tempBluetoothMessage.identifier
-                        bluetoothMessage.rssi = tempBluetoothMessage.rssi
-                        bluetoothMessage.tx = tempBluetoothMessage.tx
-                        bluetoothMessage.timestamp = tempBluetoothMessage.timestamp
-                        
-                        if (subMessageCounter >= 0) {
-                            compiledClientMessage.bluetoothMessage.append(bluetoothMessage)
-                        } else {
-                            backToQueueMessages.bluetoothMessage.append(bluetoothMessage)
+                        if let unwrappedTempMessageData = tempMessageData {
+                            for tempMessage in unwrappedTempMessageData {
+                                
+                                if workItem.isCancelled { break }
+                                
+                                tempClientMessage = try? Messaging_ClientMessage(serializedData: tempMessage)
+                                
+                                if (tempClientMessage!.locationMessage.count > 0) {
+                                    //                DDLogVerbose ("Found location message in queue")
+                                    
+                                    for tempLocationMessage in tempClientMessage!.locationMessage {
+                                        
+                                        var locationMessage = Messaging_LocationMessage()
+                                        
+                                        locationMessage.longitude = tempLocationMessage.longitude
+                                        locationMessage.latitude = tempLocationMessage.latitude
+                                        locationMessage.horizontalAccuracy = tempLocationMessage.horizontalAccuracy
+                                        
+                                        if (tempLocationMessage.hasAltitude){
+                                            locationMessage.altitude = tempLocationMessage.altitude
+                                        }
+                                        
+                                        locationMessage.timestamp = tempLocationMessage.timestamp
+                                        
+                                        if (subMessageCounter >= 0) {
+                                            compiledClientMessage.locationMessage.append(locationMessage)
+                                        } else {
+                                            backToQueueMessages.locationMessage.append(locationMessage)
+                                        }
+                                        
+                                        subMessageCounter += 1
+                                    }
+                                }
+                                
+                                if (tempClientMessage!.bluetoothMessage.count > 0) {
+                                    
+                                    //                DDLogVerbose ("Found bluetooth message in queue")
+                                    
+                                    for tempBluetoothMessage in tempClientMessage!.bluetoothMessage {
+                                        
+                                        var bluetoothMessage = Messaging_Bluetooth()
+                                        
+                                        bluetoothMessage.identifier = tempBluetoothMessage.identifier
+                                        bluetoothMessage.rssi = tempBluetoothMessage.rssi
+                                        bluetoothMessage.tx = tempBluetoothMessage.tx
+                                        bluetoothMessage.timestamp = tempBluetoothMessage.timestamp
+                                        
+                                        if (subMessageCounter >= 0) {
+                                            compiledClientMessage.bluetoothMessage.append(bluetoothMessage)
+                                        } else {
+                                            backToQueueMessages.bluetoothMessage.append(bluetoothMessage)
+                                        }
+                                        
+                                        subMessageCounter += 1
+                                    }
+                                }
+                                
+                                if (tempClientMessage!.ibeaconMessage.count > 0) {
+                                    
+                                    //                DDLogVerbose ("Found ibeacon messages in queue")
+                                    
+                                    for tempIbeaconMessage in tempClientMessage!.ibeaconMessage {
+                                        
+                                        var ibeaconMessage = Messaging_IBeacon()
+                                        
+                                        ibeaconMessage.uuid = tempIbeaconMessage.uuid
+                                        ibeaconMessage.major = tempIbeaconMessage.major
+                                        ibeaconMessage.minor = tempIbeaconMessage.minor
+                                        ibeaconMessage.rssi = tempIbeaconMessage.rssi
+                                        ibeaconMessage.accuracy = tempIbeaconMessage.accuracy
+                                        ibeaconMessage.timestamp = tempIbeaconMessage.timestamp
+                                        ibeaconMessage.proximity = tempIbeaconMessage.proximity
+                                        
+                                        if (subMessageCounter >= 0) {
+                                            compiledClientMessage.ibeaconMessage.append(ibeaconMessage)
+                                        } else {
+                                            backToQueueMessages.ibeaconMessage.append(ibeaconMessage)
+                                        }
+                                        
+                                        subMessageCounter += 1
+                                    }
+                                }
+                                
+                                if (tempClientMessage!.eddystonemessage.count > 0) {
+                                    
+                                    //                DDLogVerbose ("Found eddystone messages in queue")
+                                    
+                                    for tempEddyStoneMessage in tempClientMessage!.eddystonemessage {
+                                        
+                                        var eddyStoneMessage = Messaging_EddystoneBeacon()
+                                        
+                                        eddyStoneMessage.eid = tempEddyStoneMessage.eid
+                                        eddyStoneMessage.rssi = tempEddyStoneMessage.rssi
+                                        eddyStoneMessage.timestamp = tempEddyStoneMessage.timestamp
+                                        eddyStoneMessage.tx = tempEddyStoneMessage.tx
+                                        
+                                        if (subMessageCounter >= 0) {
+                                            compiledClientMessage.eddystonemessage.append(eddyStoneMessage)
+                                        } else {
+                                            backToQueueMessages.eddystonemessage.append(eddyStoneMessage)
+                                        }
+                                        
+                                        subMessageCounter += 1
+                                    }
+                                }
+                                
+                                
+                                if (tempClientMessage!.alias.count > 0) {
+                                    
+                                    //                DDLogVerbose ("Found alias message in queue")
+                                    
+                                    for tempAliasMessage in tempClientMessage!.alias {
+                                        
+                                        var aliasMessage = Messaging_AliasMessage()
+                                        
+                                        aliasMessage.key = tempAliasMessage.key
+                                        aliasMessage.value = tempAliasMessage.value
+                                        
+                                        if (subMessageCounter >= 0) {
+                                            compiledClientMessage.alias.append(aliasMessage)
+                                        } else {
+                                            backToQueueMessages.alias.append(aliasMessage)
+                                        }
+                                        
+                                        subMessageCounter += 1
+                                    }
+                                }
+                                
+                                if (tempClientMessage!.hasIosCapability){
+                                    var capabilityMessage = Messaging_IosCapability()
+                                    
+                                    var tempCapabilityMessage = tempClientMessage!.iosCapability
+                                    
+                                    if tempCapabilityMessage.hasLocationServices {
+                                        capabilityMessage.locationServices = tempCapabilityMessage.locationServices
+                                    }
+                                    
+                                    if tempCapabilityMessage.hasLowPowerMode {
+                                        capabilityMessage.lowPowerMode = tempCapabilityMessage.lowPowerMode
+                                    }
+                                    
+                                    if tempCapabilityMessage.hasLocationAuthStatus {
+                                        capabilityMessage.locationAuthStatus = tempCapabilityMessage.locationAuthStatus
+                                    }
+                                    
+                                    if tempCapabilityMessage.hasBluetoothHardware {
+                                        capabilityMessage.bluetoothHardware = tempCapabilityMessage.bluetoothHardware
+                                    }
+                                    
+                                    if tempCapabilityMessage.hasBatteryState {
+                                        capabilityMessage.batteryState = tempCapabilityMessage.batteryState
+                                    }
+                                    
+                                    if (subMessageCounter >= 0) {
+                                        compiledClientMessage.iosCapability = capabilityMessage
+                                    } else {
+                                        backToQueueMessages.iosCapability = capabilityMessage
+                                    }
+                                    
+                                    subMessageCounter += 1
+                                }
+                                
+                                if (tempClientMessage!.hasMarker){
+                                    
+                                    //                DDLogVerbose("Found marker message in queue");
+                                    
+                                    var markerMessage = Messaging_MarkerMessage()
+                                    
+                                    markerMessage.data = tempClientMessage!.marker.data
+                                    markerMessage.time = tempClientMessage!.marker.time
+                                    
+                                    compiledClientMessage.marker = markerMessage
+                                    
+                                    subMessageCounter += 1
+                                }
+                            }
                         }
-                        
-                        subMessageCounter += 1
                     }
-                }
-                
-                if (tempClientMessage!.ibeaconMessage.count > 0) {
                     
-                    //                DDLogVerbose ("Found ibeacon messages in queue")
+                    //DDLogVerbose("Compiled \(subMessageCounter) message(s)")
                     
-                    for tempIbeaconMessage in tempClientMessage!.ibeaconMessage {
-                        
-                        var ibeaconMessage = Messaging_IBeacon()
-                        
-                        ibeaconMessage.uuid = tempIbeaconMessage.uuid
-                        ibeaconMessage.major = tempIbeaconMessage.major
-                        ibeaconMessage.minor = tempIbeaconMessage.minor
-                        ibeaconMessage.rssi = tempIbeaconMessage.rssi
-                        ibeaconMessage.accuracy = tempIbeaconMessage.accuracy
-                        ibeaconMessage.timestamp = tempIbeaconMessage.timestamp
-                        ibeaconMessage.proximity = tempIbeaconMessage.proximity
-                        
-                        if (subMessageCounter >= 0) {
-                            compiledClientMessage.ibeaconMessage.append(ibeaconMessage)
-                        } else {
-                            backToQueueMessages.ibeaconMessage.append(ibeaconMessage)
+                    //        if (compiledClientMessage.locationMessage.count > 0){
+                    //            let geoMsg = compiledClientMessage.locationMessage[0]
+                    //            let geoData = try? geoMsg.serializedData()
+                    //DDLogVerbose("compiled geoMsg: \(geoData?.count ?? -1) and byte array: \(geoData?.hexEncodedString() ?? "NOT AVAILABLE")")
+                    //        }
+                    
+                    //        if (compiledClientMessage.bluetoothMessage.count > 0){
+                    //            let blMsg = compiledClientMessage.bluetoothMessage[0]
+                    //            let blData = try? blMsg.serializedData()
+                    //DDLogVerbose("compiled bluetooth message: \(blData?.count ?? -1) and byte array: \(blData?.hexEncodedString() ?? "NOT AVAILABLE"))")
+                    
+                    //        }
+                    
+                    //        for beacon in compiledClientMessage.ibeaconMessage {
+                    //            DDLogVerbose("Sending beacons \(compiledClientMessage.ibeaconMessage.count) with \(beacon)")
+                    //        }
+                    
+                    //        if (compiledClientMessage.alias.count > 0){
+                    //            let alMsg = compiledClientMessage.alias[0]
+                    //            let alData = try? alMsg.serializedData()
+                    //DDLogVerbose("compiled alias message: \(alData?.count ?? -1)  and byte array: \(alData?.hexEncodedString() ?? "NOT AVAILABLE"))")
+                    //        }
+                    
+                    if workItem.isCancelled { break }
+                    
+                    if let backToQueueData = try? backToQueueMessages.serializedData() {
+                        //            //DDLogDebug("Had to split a client message into two, pushing \(subMessageCounter) unsent messages back to the Queue")
+                        if backToQueueData.count > 0 {
+                            //                ccRequest?.messageQueuePushSwiftBridge(backToQueueData)
+                            if let database = self?.messagesDB {
+                                do {
+                                    try database.insertMessage(ccMessage: CCMessage.init(observation: backToQueueData))
+                                } catch SQLiteError.Prepare(let error) {
+                                    Log.error("SQL Prepare Error: \(error)")
+                                } catch {
+                                    Log.error("Error while executing messagesDB.insertMessage \(error)")
+                                }
+                            }
                         }
-                        
-                        subMessageCounter += 1
-                    }
-                }
-                
-                if (tempClientMessage!.eddystonemessage.count > 0) {
-                    
-                    //                DDLogVerbose ("Found eddystone messages in queue")
-                    
-                    for tempEddyStoneMessage in tempClientMessage!.eddystonemessage {
-                        
-                        var eddyStoneMessage = Messaging_EddystoneBeacon()
-                        
-                        eddyStoneMessage.eid = tempEddyStoneMessage.eid
-                        eddyStoneMessage.rssi = tempEddyStoneMessage.rssi
-                        eddyStoneMessage.timestamp = tempEddyStoneMessage.timestamp
-                        eddyStoneMessage.tx = tempEddyStoneMessage.tx
-                        
-                        if (subMessageCounter >= 0) {
-                            compiledClientMessage.eddystonemessage.append(eddyStoneMessage)
-                        } else {
-                            backToQueueMessages.eddystonemessage.append(eddyStoneMessage)
-                        }
-                        
-                        subMessageCounter += 1
-                    }
-                }
-                
-                
-                if (tempClientMessage!.alias.count > 0) {
-                    
-                    //                DDLogVerbose ("Found alias message in queue")
-                    
-                    for tempAliasMessage in tempClientMessage!.alias {
-                        
-                        var aliasMessage = Messaging_AliasMessage()
-                        
-                        aliasMessage.key = tempAliasMessage.key
-                        aliasMessage.value = tempAliasMessage.value
-                        
-                        if (subMessageCounter >= 0) {
-                            compiledClientMessage.alias.append(aliasMessage)
-                        } else {
-                            backToQueueMessages.alias.append(aliasMessage)
-                        }
-                        
-                        subMessageCounter += 1
-                    }
-                }
-                
-                if (tempClientMessage!.hasIosCapability){
-                    var capabilityMessage = Messaging_IosCapability()
-                    
-                    var tempCapabilityMessage = tempClientMessage!.iosCapability
-                    
-                    if tempCapabilityMessage.hasLocationServices {
-                        capabilityMessage.locationServices = tempCapabilityMessage.locationServices
-                    }
-                    
-                    if tempCapabilityMessage.hasLowPowerMode {
-                        capabilityMessage.lowPowerMode = tempCapabilityMessage.lowPowerMode
-                    }
-                    
-                    if tempCapabilityMessage.hasLocationAuthStatus {
-                        capabilityMessage.locationAuthStatus = tempCapabilityMessage.locationAuthStatus
-                    }
-                    
-                    if tempCapabilityMessage.hasBluetoothHardware {
-                        capabilityMessage.bluetoothHardware = tempCapabilityMessage.bluetoothHardware
-                    }
-                    
-                    if tempCapabilityMessage.hasBatteryState {
-                        capabilityMessage.batteryState = tempCapabilityMessage.batteryState
-                    }
-                    
-                    if (subMessageCounter >= 0) {
-                        compiledClientMessage.iosCapability = capabilityMessage
                     } else {
-                        backToQueueMessages.iosCapability = capabilityMessage
+                        //DDLogError("Couldn't serialize back to queue data")
                     }
                     
-                    subMessageCounter += 1
-                }
-                
-                if (tempClientMessage!.hasMarker){
-                    
-                    //                DDLogVerbose("Found marker message in queue");
-                    
-                    var markerMessage = Messaging_MarkerMessage()
-                    
-                    markerMessage.data = tempClientMessage!.marker.data
-                    markerMessage.time = tempClientMessage!.marker.time
-                    
-                    compiledClientMessage.marker = markerMessage
-                    
-                    subMessageCounter += 1
-                }
-            }
-        }
-        
-        //DDLogVerbose("Compiled \(subMessageCounter) message(s)")
-        
-        //        if (compiledClientMessage.locationMessage.count > 0){
-        //            let geoMsg = compiledClientMessage.locationMessage[0]
-        //            let geoData = try? geoMsg.serializedData()
-        //DDLogVerbose("compiled geoMsg: \(geoData?.count ?? -1) and byte array: \(geoData?.hexEncodedString() ?? "NOT AVAILABLE")")
-        //        }
-        
-        //        if (compiledClientMessage.bluetoothMessage.count > 0){
-        //            let blMsg = compiledClientMessage.bluetoothMessage[0]
-        //            let blData = try? blMsg.serializedData()
-        //DDLogVerbose("compiled bluetooth message: \(blData?.count ?? -1) and byte array: \(blData?.hexEncodedString() ?? "NOT AVAILABLE"))")
-        
-        //        }
-        
-        //        for beacon in compiledClientMessage.ibeaconMessage {
-        //            DDLogVerbose("Sending beacons \(compiledClientMessage.ibeaconMessage.count) with \(beacon)")
-        //        }
-        
-        //        if (compiledClientMessage.alias.count > 0){
-        //            let alMsg = compiledClientMessage.alias[0]
-        //            let alData = try? alMsg.serializedData()
-        //DDLogVerbose("compiled alias message: \(alData?.count ?? -1)  and byte array: \(alData?.hexEncodedString() ?? "NOT AVAILABLE"))")
-        //        }
-        
-        if let backToQueueData = try? backToQueueMessages.serializedData() {
-            //            //DDLogDebug("Had to split a client message into two, pushing \(subMessageCounter) unsent messages back to the Queue")
-            if backToQueueData.count > 0 {
-                //                ccRequest?.messageQueuePushSwiftBridge(backToQueueData)
-                if let database = self.messagesDB {
-                    do {
-                        try database.insertMessage(ccMessage: CCMessage.init(observation: backToQueueData))
-                    } catch SQLiteError.Prepare(let error) {
-                        Log.error("SQL Prepare Error: \(error)")
-                    } catch {
-                        Log.error("Error while executing messagesDB.insertMessage \(error)")
+                    if let isNewBatteryLevel = self?.stateStore.state.batteryLevelState.isNewBatteryLevel {
+                        if isNewBatteryLevel {
+                            var batteryMessage = Messaging_Battery()
+                            
+                            if let batteryLevel = self?.stateStore.state.batteryLevelState.batteryLevel {
+                                batteryMessage.battery = batteryLevel
+                                compiledClientMessage.battery = batteryMessage
+                                self?.stateStore.dispatch(BatteryLevelReportedAction())
+                                //                DDLogVerbose("Battery message build: \(batteryMessage)")
+                            }
+                        }
                     }
-                }
-            }
-        } else {
-            //DDLogError("Couldn't serialize back to queue data")
-        }
-        
-        if let isNewBatteryLevel = stateStore.state.batteryLevelState.isNewBatteryLevel {
-            if isNewBatteryLevel {
-                var batteryMessage = Messaging_Battery()
-                batteryMessage.battery = stateStore.state.batteryLevelState.batteryLevel!
-                
-                compiledClientMessage.battery = batteryMessage
-                stateStore.dispatch(BatteryLevelReportedAction())
-                //                DDLogVerbose("Battery message build: \(batteryMessage)")
-            }
-        }
-        
-        if let data = try? compiledClientMessage.serializedData(){
-            if (data.count > 0) {
-                
-                if timeHandling.isRebootTimeSame(stateStore: stateStore, ccSocket: ccSocket) {
-                    if let currentTimePeriod = TimeHandling.getCurrentTimePeriodSince1970(stateStore: stateStore){
-                        compiledClientMessage.sentTime = UInt64(currentTimePeriod * 1000)
-                        //                        DDLogVerbose("Added sent time to the client message")
+                    
+                    if let data = try? compiledClientMessage.serializedData(){
+                        if (data.count > 0) {
+                            
+                            if let stateStore = self?.stateStore {
+                                if let ccSocket = self?.ccSocket {
+                            
+                                    if let isRebootTimeSame = self?.timeHandling.isRebootTimeSame(stateStore: stateStore, ccSocket: ccSocket) {
+                                        if isRebootTimeSame {
+                                            if let currentTimePeriod = TimeHandling.getCurrentTimePeriodSince1970(stateStore: stateStore) {
+                                                compiledClientMessage.sentTime = UInt64(currentTimePeriod * 1000)
+                                                //                        DDLogVerbose("Added sent time to the client message")
+                                            }
+                                        }
+                                    }
+                                    
+                                    if let dataIncludingSentTime = try? compiledClientMessage.serializedData(){
+                                        //            Log.verbose("Sending \(unwrappedData.count) bytes of compiled client message data")
+                                        self?.ccSocket?.sendWebSocketMessage(data: dataIncludingSentTime)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 
-                if let dataIncludingSentTime = try? compiledClientMessage.serializedData(){
-                    return dataIncludingSentTime
+                if let index = self?.workItems.index(where: {$0 === workItem!}) {
+                    self?.workItems.remove(at: index)
                 }
+                
+                workItem = nil
             }
         }
         
-        return nil
+        workItems.append(workItem)
+        
+        DispatchQueue.global(qos: .background).async(execute: workItem)
     }
     
     // MARK: - APPLICATION STATE HANDLING FUNCTIONS
@@ -1454,18 +1484,32 @@ class CCRequestMessaging: NSObject {
     }
     
     func stop () {
+        NotificationCenter.default.removeObserver(self)
         stateStore.unsubscribe(self)
         killTimeBetweenSendsTimer()
+        
+        timeHandling.delegate = nil
+        
+        for workItem in workItems {
+            workItem.cancel()
+            Log.verbose("Cancelling work item")
+        }
+        
+        workItems.removeAll()
+        
+        messagesDB.close()
+        messagesDB = nil
     }
     
     func killTimeBetweenSendsTimer() {
-        if self.timeBetweenSendsTimer != nil {
-            self.timeBetweenSendsTimer?.invalidate()
-            self.timeBetweenSendsTimer = nil
+        if timeBetweenSendsTimer != nil {
+            timeBetweenSendsTimer?.invalidate()
+            timeBetweenSendsTimer = nil
         }
     }
     
     deinit {
+        NotificationCenter.default.removeObserver(self)
         //        DDLogVerbose("CCRequestMessaging DEINIT")
         //        if #available(iOS 10.0, *) {
         //            os_log("[CC] CCRequestMessaging DEINIT")

@@ -379,6 +379,13 @@ class CCLocationManager: NSObject, CLLocationManagerDelegate {
     
     public func stop () {
         stopTimers()
+        
+        iBeaconMessagesDB.close()
+        eddystoneBeaconMessagesDB.close()
+        
+        iBeaconMessagesDB = nil
+        eddystoneBeaconMessagesDB = nil
+        
         stateStore.unsubscribe(self)
         stopAllLocationObservations()
     }
