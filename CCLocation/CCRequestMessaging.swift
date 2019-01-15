@@ -72,15 +72,15 @@ class CCRequestMessaging: NSObject {
         Log.debug("Received a server message: ")
         Log.debug("\(serverMessage)")
         
-        processGlobalSettings(serverMessage: serverMessage)
-        processIosSettings(serverMessage: serverMessage)
+        processGlobalSettings(serverMessage: serverMessage, store: stateStore)
+        processIosSettings(serverMessage: serverMessage, store: stateStore)
         
         //        processBTSettings(serverMessage: serverMessage)
         //        processSystemBeacons(serverMessage: serverMessage)
         //        [self processTextMessageWrapper:serverMessage];
     }
     
-    func processGlobalSettings(serverMessage:Messaging_ServerMessage) {
+    func processGlobalSettings(serverMessage:Messaging_ServerMessage, store: Store<LibraryState>) {
         
         if (serverMessage.hasGlobalSettings) {
             //            DDLogVerbose("got global settings message")
@@ -91,12 +91,18 @@ class CCRequestMessaging: NSObject {
                 
                 // if radio silence is 0 treat it the same way as if the timer doesn't exist
                 if globalSettings.radioSilence != 0 {
-                    stateStore.dispatch(TimeBetweenSendsTimerReceivedAction(timeInMilliseconds: globalSettings.radioSilence))
+                    DispatchQueue.main.async {
+                        store.dispatch(TimeBetweenSendsTimerReceivedAction(timeInMilliseconds: globalSettings.radioSilence))
+                    }
                 } else {
-                    stateStore.dispatch(TimeBetweenSendsTimerReceivedAction(timeInMilliseconds: nil))
+                    DispatchQueue.main.async {
+                        store.dispatch(TimeBetweenSendsTimerReceivedAction(timeInMilliseconds: nil))
+                    }
                 }
             } else {
-                stateStore.dispatch(TimeBetweenSendsTimerReceivedAction(timeInMilliseconds: nil))
+                DispatchQueue.main.async {
+                    store.dispatch(TimeBetweenSendsTimerReceivedAction(timeInMilliseconds: nil))
+                }
             }
             
             if globalSettings.hasID {
@@ -139,21 +145,21 @@ class CCRequestMessaging: NSObject {
     //    }
     //}
     
-    func processIosSettings (serverMessage:Messaging_ServerMessage){
+    func processIosSettings (serverMessage:Messaging_ServerMessage, store: Store<LibraryState>){
         //        DDLogVerbose("got ios settings message")
         
         if (serverMessage.hasIosSettings && !serverMessage.iosSettings.hasGeoSettings) {
-            stateStore.dispatch(DisableBackgroundGEOAction())
-            stateStore.dispatch(DisableForegroundGEOAction())
-            stateStore.dispatch(IsSignificationLocationChangeAction(isSignificantLocationChangeMonitoringState: false))
-            stateStore.dispatch(DisableCurrrentGEOAction())
+            DispatchQueue.main.async {store.dispatch(DisableBackgroundGEOAction())}
+            DispatchQueue.main.async {store.dispatch(DisableForegroundGEOAction())}
+            DispatchQueue.main.async {store.dispatch(IsSignificationLocationChangeAction(isSignificantLocationChangeMonitoringState: false))}
+            DispatchQueue.main.async {store.dispatch(DisableCurrrentGEOAction())}
         }
         
         if (serverMessage.hasIosSettings && !serverMessage.iosSettings.hasBeaconSettings) {
-            stateStore.dispatch(DisableCurrentiBeaconMonitoringAction())
-            stateStore.dispatch(DisableForegroundiBeaconAction())
-            stateStore.dispatch(DisableBackgroundiBeaconAction())
-            stateStore.dispatch(DisableCurrrentiBeaconAction())
+            DispatchQueue.main.async {store.dispatch(DisableCurrentiBeaconMonitoringAction())}
+            DispatchQueue.main.async {store.dispatch(DisableForegroundiBeaconAction())}
+            DispatchQueue.main.async {store.dispatch(DisableBackgroundiBeaconAction())}
+            DispatchQueue.main.async {store.dispatch(DisableCurrrentiBeaconAction())}
         }
         
         if (serverMessage.hasIosSettings && serverMessage.iosSettings.hasGeoSettings) {
@@ -162,12 +168,12 @@ class CCRequestMessaging: NSObject {
             if geoSettings.hasSignificantUpates {
                 
                 if geoSettings.significantUpates {
-                    stateStore.dispatch(IsSignificationLocationChangeAction(isSignificantLocationChangeMonitoringState: true))
+                    DispatchQueue.main.async {store.dispatch(IsSignificationLocationChangeAction(isSignificantLocationChangeMonitoringState: true))}
                 } else {
-                    stateStore.dispatch(IsSignificationLocationChangeAction(isSignificantLocationChangeMonitoringState: false))
+                    DispatchQueue.main.async {store.dispatch(IsSignificationLocationChangeAction(isSignificantLocationChangeMonitoringState: false))}
                 }
             } else {
-                stateStore.dispatch(IsSignificationLocationChangeAction(isSignificantLocationChangeMonitoringState: false))
+                DispatchQueue.main.async {store.dispatch(IsSignificationLocationChangeAction(isSignificantLocationChangeMonitoringState: false))}
             }
             
             if geoSettings.hasBackgroundGeo {
@@ -227,9 +233,9 @@ class CCRequestMessaging: NSObject {
                     pausesUpdates: pausesUpdates
                 )
                 
-                stateStore.dispatch(enableBackgroundGEOAction)
+                DispatchQueue.main.async {store.dispatch(enableBackgroundGEOAction)}
             } else {
-                stateStore.dispatch(DisableBackgroundGEOAction())
+                DispatchQueue.main.async {store.dispatch(DisableBackgroundGEOAction())}
             }
             
             if geoSettings.hasForegroundGeo {
@@ -289,9 +295,9 @@ class CCRequestMessaging: NSObject {
                     pausesUpdates: pausesUpdates
                 )
                 
-                stateStore.dispatch(enableForegroundGEOAction)
+                DispatchQueue.main.async {store.dispatch(enableForegroundGEOAction)}
             } else {
-                stateStore.dispatch(DisableForegroundGEOAction())
+                DispatchQueue.main.async {store.dispatch(DisableForegroundGEOAction())}
             }
         }
         
@@ -325,9 +331,9 @@ class CCRequestMessaging: NSObject {
                     }
                 }
                 
-                stateStore.dispatch(EnableCurrentiBeaconMonitoringAction(monitoringRegions: monitoringRegions.sorted(by: {$0.identifier < $1.identifier})))
+                DispatchQueue.main.async {store.dispatch(EnableCurrentiBeaconMonitoringAction(monitoringRegions: monitoringRegions.sorted(by: {$0.identifier < $1.identifier})))}
             } else {
-                stateStore.dispatch(DisableCurrentiBeaconMonitoringAction())
+                DispatchQueue.main.async {store.dispatch(DisableCurrentiBeaconMonitoringAction())}
             }
             
             if beaconSettings.hasForegroundRanging {
@@ -420,16 +426,16 @@ class CCRequestMessaging: NSObject {
                 
                 let isIBeaconRangingEnabled = rangingRegions.count > 0 ? true : false
                 
-                stateStore.dispatch(EnableForegroundBeaconAction(maxRuntime: maxRuntime,
+                DispatchQueue.main.async {store.dispatch(EnableForegroundBeaconAction(maxRuntime: maxRuntime,
                                                                  minOffTime: minOffTime,
                                                                  regions: rangingRegions.sorted(by: {$0.identifier < $1.identifier}),
                                                                  filterWindowSize: filterWindowSize,
                                                                  filterMaxObservations: maxObservations,
                                                                  filterExcludeRegions: excludeRegions.sorted(by: {$0.identifier < $1.identifier}),
                                                                  isEddystoneScanEnabled: eddystoneScan,
-                                                                 isIBeaconRangingEnabled: isIBeaconRangingEnabled))
+                                                                 isIBeaconRangingEnabled: isIBeaconRangingEnabled))}
             } else {
-                stateStore.dispatch(DisableForegroundiBeaconAction())
+                DispatchQueue.main.async {store.dispatch(DisableForegroundiBeaconAction())}
             }
             
             if beaconSettings.hasBackgroundRanging {
@@ -523,16 +529,16 @@ class CCRequestMessaging: NSObject {
                 
                 let isIBeaconRangingEnabled = rangingRegions.count > 0 ? true : false
                 
-                stateStore.dispatch(EnableBackgroundiBeaconAction(maxRuntime: maxRuntime,
+                DispatchQueue.main.async {self.stateStore.dispatch(EnableBackgroundiBeaconAction(maxRuntime: maxRuntime,
                                                                   minOffTime: minOffTime,
                                                                   regions: rangingRegions.sorted(by: {$0.identifier < $1.identifier}),
                                                                   filterWindowSize: filterWindowSize,
                                                                   filterMaxObservations: maxObservations,
                                                                   filterExcludeRegions: excludeRegions.sorted(by: {$0.identifier < $1.identifier}),
                                                                   eddystoneScanEnabled: eddystoneScan,
-                                                                  isIBeaconRangingEnabled: isIBeaconRangingEnabled))
+                                                                  isIBeaconRangingEnabled: isIBeaconRangingEnabled))}
             } else {
-                stateStore.dispatch(DisableBackgroundiBeaconAction())
+                DispatchQueue.main.async {self.stateStore.dispatch(DisableBackgroundiBeaconAction())}
             }
         }
     }
@@ -878,13 +884,13 @@ class CCRequestMessaging: NSObject {
     
     public func webSocketDidOpen() {
         if stateStore != nil {
-            stateStore.dispatch(WebSocketAction(connectionState: ConnectionState.online))
+            DispatchQueue.main.async {self.stateStore.dispatch(WebSocketAction(connectionState: ConnectionState.online))}
         }
     }
     
     public func webSocketDidClose() {
         if stateStore != nil {
-            stateStore.dispatch(WebSocketAction(connectionState: ConnectionState.offline))
+            DispatchQueue.main.async {self.stateStore.dispatch(WebSocketAction(connectionState: ConnectionState.offline))}
         }
     }
     
@@ -976,12 +982,11 @@ class CCRequestMessaging: NSObject {
         sendQueuedClientMessagesTimerFired()
         
         // now we simply resume the normal timer
-        stateStore.dispatch(ScheduleSilencePeriodTimerAction())
+        DispatchQueue.main.async {self.stateStore.dispatch(ScheduleSilencePeriodTimerAction())}
     }
     
     public func sendQueuedClientMessages(firstMessage: Data?) {
         
-        var compiledClientMessageData: Data?
         var workItem: DispatchWorkItem!
         
         if (firstMessage != nil){
@@ -1305,7 +1310,7 @@ class CCRequestMessaging: NSObject {
                             if let batteryLevel = self?.stateStore.state.batteryLevelState.batteryLevel {
                                 batteryMessage.battery = batteryLevel
                                 compiledClientMessage.battery = batteryMessage
-                                self?.stateStore.dispatch(BatteryLevelReportedAction())
+                                DispatchQueue.main.async {self?.stateStore.dispatch(BatteryLevelReportedAction())}
                                 //                DDLogVerbose("Battery message build: \(batteryMessage)")
                             }
                         }
@@ -1359,7 +1364,7 @@ class CCRequestMessaging: NSObject {
         
         //        DDLogDebug("[APP STATE] applicationDidEnterBackground");
         
-        stateStore.dispatch(LifeCycleAction(lifecycleState: LifeCycle.background))
+        DispatchQueue.main.async {self.stateStore.dispatch(LifeCycleAction(lifecycleState: LifeCycle.background))}
     }
     
     func applicationWillEnterForeground () {
@@ -1370,7 +1375,7 @@ class CCRequestMessaging: NSObject {
     func applicationDidBecomeActive () {
         //        DDLogDebug("[APP STATE] applicationDidBecomeActive");
         
-        stateStore.dispatch(LifeCycleAction(lifecycleState: LifeCycle.foreground))
+        DispatchQueue.main.async {self.stateStore.dispatch(LifeCycleAction(lifecycleState: LifeCycle.foreground))}
     }
     
     func applicationWillTerminate () {
@@ -1466,20 +1471,20 @@ class CCRequestMessaging: NSObject {
     func batteryLevelDidChange(notification: Notification){
         let batteryLevel = UIDevice.current.batteryLevel
         
-        stateStore.dispatch(BatteryLevelChangedAction(batteryLevel: UInt32(batteryLevel * 100)))
+        DispatchQueue.main.async {self.stateStore.dispatch(BatteryLevelChangedAction(batteryLevel: UInt32(batteryLevel * 100)))}
     }
     
     func batteryStateDidChange(notification: Notification){
         let batteryState = UIDevice.current.batteryState
         
-        stateStore.dispatch(BatteryStateChangedAction(batteryState: batteryState))
+        DispatchQueue.main.async {self.stateStore.dispatch(BatteryStateChangedAction(batteryState: batteryState))}
     }
     
     func powerModeDidChange(notification: Notification) {
         if #available(iOS 9.0, *) {
             let isLowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
             
-            stateStore.dispatch(IsLowPowerModeEnabledAction(isLowPowerModeEnabled: isLowPowerMode))
+            DispatchQueue.main.async {self.stateStore.dispatch(IsLowPowerModeEnabledAction(isLowPowerModeEnabled: isLowPowerMode))}
         }
     }
     
@@ -1524,12 +1529,12 @@ extension CCRequestMessaging: TimeHandlingDelegate {
     public func newTrueTimeAvailable(trueTime: Date, timeIntervalSinceBootTime: TimeInterval, systemTime: Date, lastRebootTime: Date) {
         Log.debug("received new truetime \(trueTime), timeIntervalSinceBootTime \(timeIntervalSinceBootTime), systemTime \(systemTime), lastRebootTime \(lastRebootTime)")
         
-        stateStore.dispatch(NewTruetimeReceivedAction(lastTrueTime: trueTime, bootTimeIntervalAtLastTrueTime: timeIntervalSinceBootTime, systemTimeAtLastTrueTime: systemTime, lastRebootTime: lastRebootTime))
+        DispatchQueue.main.async {self.stateStore.dispatch(NewTruetimeReceivedAction(lastTrueTime: trueTime, bootTimeIntervalAtLastTrueTime: timeIntervalSinceBootTime, systemTimeAtLastTrueTime: systemTime, lastRebootTime: lastRebootTime))}
         
         if let radioSilenceTimerState = stateStore.state.ccRequestMessagingState.radiosilenceTimerState {
             if (radioSilenceTimerState.timer == .stopped){
                 if radioSilenceTimerState.startTimeInterval != nil {
-                    stateStore.dispatch(ScheduleSilencePeriodTimerAction())
+                    DispatchQueue.main.async {self.stateStore.dispatch(ScheduleSilencePeriodTimerAction())}
                 }
             }
         }
@@ -1582,18 +1587,18 @@ extension CCRequestMessaging: StoreSubscriber {
                             
                             if intervalForLastTimer < Double(timeInterval / 1000) {
                                 timeBetweenSendsTimer = Timer.scheduledTimer(timeInterval:TimeInterval(intervalForLastTimer), target: self, selector: #selector(self.sendQueuedClientMessagesTimerFiredOnce), userInfo: nil, repeats: false)
-                                stateStore.dispatch(TimerRunningAction(startTimeInterval: nil))
+                                DispatchQueue.main.async {self.stateStore.dispatch(TimerRunningAction(startTimeInterval: nil))}
                             } else {
                                 timeBetweenSendsTimer = Timer.scheduledTimer(timeInterval:TimeInterval(timeInterval / 1000), target: self, selector: #selector(self.sendQueuedClientMessagesTimerFired), userInfo: nil, repeats: true)
                                 
-                                stateStore.dispatch(TimerRunningAction(startTimeInterval: TimeHandling.timeIntervalSinceBoot()))
+                                DispatchQueue.main.async {self.stateStore.dispatch(TimerRunningAction(startTimeInterval: TimeHandling.timeIntervalSinceBoot()))}
                             }
                             
                         } else {
                             
                             timeBetweenSendsTimer = Timer.scheduledTimer(timeInterval:TimeInterval(timeInterval / 1000), target: self, selector: #selector(self.sendQueuedClientMessagesTimerFired), userInfo: nil, repeats: true)
                             
-                            stateStore.dispatch(TimerRunningAction(startTimeInterval: TimeHandling.timeIntervalSinceBoot()))
+                            DispatchQueue.main.async {self.stateStore.dispatch(TimerRunningAction(startTimeInterval: TimeHandling.timeIntervalSinceBoot()))}
                         }
                     }
                 }
@@ -1606,7 +1611,7 @@ extension CCRequestMessaging: StoreSubscriber {
                 if timeBetweenSendsTimer == nil {
                     //                    DDLogVerbose("RADIOSILENCETIMER timeBetweenSendsTimer == nil, scheduling new timer")
                     if timeHandling.isRebootTimeSame(stateStore: stateStore, ccSocket: ccSocket){
-                        stateStore.dispatch(ScheduleSilencePeriodTimerAction())
+                        DispatchQueue.main.async {self.stateStore.dispatch(ScheduleSilencePeriodTimerAction())}
                     }
                 }
                 
@@ -1621,7 +1626,7 @@ extension CCRequestMessaging: StoreSubscriber {
                         timeBetweenSendsTimer = nil
                     }
                     
-                    stateStore.dispatch(TimerStoppedAction())
+                    DispatchQueue.main.async {self.stateStore.dispatch(TimerStoppedAction())}
                 }
             }
         }

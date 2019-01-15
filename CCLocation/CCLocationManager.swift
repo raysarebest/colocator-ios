@@ -81,8 +81,8 @@ class CCLocationManager: NSObject, CLLocationManagerDelegate {
         
         //initial dispatch of location state
         
-        stateStore.dispatch(LocationAuthStatusChangedAction(locationAuthStatus: CLLocationManager.authorizationStatus()))
-        stateStore.dispatch(IsLocationServicesEnabledAction(isLocationServicesEnabled: CLLocationManager.locationServicesEnabled()))
+        DispatchQueue.main.async {stateStore.dispatch(LocationAuthStatusChangedAction(locationAuthStatus: CLLocationManager.authorizationStatus()))}
+        DispatchQueue.main.async {stateStore.dispatch(IsLocationServicesEnabledAction(isLocationServicesEnabled: CLLocationManager.locationServicesEnabled()))}
         
         openIBeaconDatabase()
         createIBeaconTable()
@@ -336,9 +336,9 @@ class CCLocationManager: NSObject, CLLocationManagerDelegate {
                 
                 let offTimeEnd = Date().addingTimeInterval(TimeInterval(minOffTime / 1000))
                 
-                stateStore.dispatch(SetGEOOffTimeEnd(offTimeEnd: offTimeEnd))
+                DispatchQueue.main.async {self.stateStore.dispatch(SetGEOOffTimeEnd(offTimeEnd: offTimeEnd))}
             } else {
-                stateStore.dispatch(SetGEOOffTimeEnd(offTimeEnd: nil))
+                DispatchQueue.main.async {self.stateStore.dispatch(SetGEOOffTimeEnd(offTimeEnd: nil))}
             }
         }
     }
@@ -795,8 +795,8 @@ extension CCLocationManager {
             return
         }
         
-        stateStore.dispatch(NotifyWakeupAction(ccWakeup: CCWakeup.idle))
-        stateStore.dispatch(NotifyWakeupAction(ccWakeup: CCWakeup.notifyWakeup))
+        DispatchQueue.main.async {self.stateStore.dispatch(NotifyWakeupAction(ccWakeup: CCWakeup.idle))}
+        DispatchQueue.main.async {self.stateStore.dispatch(NotifyWakeupAction(ccWakeup: CCWakeup.notifyWakeup))}
         
         //        if #available(iOS 10.0, *) {
         //            let content = UNMutableNotificationContent()
@@ -825,8 +825,8 @@ extension CCLocationManager {
             return
         }
         
-        stateStore.dispatch(NotifyWakeupAction(ccWakeup: CCWakeup.idle))
-        stateStore.dispatch(NotifyWakeupAction(ccWakeup: CCWakeup.notifyWakeup))
+        DispatchQueue.main.async {self.stateStore.dispatch(NotifyWakeupAction(ccWakeup: CCWakeup.idle))}
+        DispatchQueue.main.async {self.stateStore.dispatch(NotifyWakeupAction(ccWakeup: CCWakeup.notifyWakeup))}
         
         //        if #available(iOS 10.0, *) {
         //            let content = UNMutableNotificationContent()
@@ -981,8 +981,8 @@ extension CCLocationManager {
     public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         // Log.debug("Changed authorization status")
         
-        stateStore.dispatch(LocationAuthStatusChangedAction(locationAuthStatus: status))
-        stateStore.dispatch(IsLocationServicesEnabledAction(isLocationServicesEnabled: CLLocationManager.locationServicesEnabled()))
+        DispatchQueue.main.async {self.stateStore.dispatch(LocationAuthStatusChangedAction(locationAuthStatus: status))}
+        DispatchQueue.main.async {self.stateStore.dispatch(IsLocationServicesEnabledAction(isLocationServicesEnabled: CLLocationManager.locationServicesEnabled()))}
         
         switch (status) {
         case .notDetermined:
@@ -1087,7 +1087,7 @@ extension CCLocationManager: StoreSubscriber {
                         if let offTime = newGEOState.offTime {
                             if offTime <= Date() {
                                 //Log.verbose("GEOTIMER offTime \(offTime) occured before current time \(Date()), resetting offTime")
-                                stateStore.dispatch(SetGEOOffTimeEnd(offTimeEnd: nil))
+                                DispatchQueue.main.async {self.stateStore.dispatch(SetGEOOffTimeEnd(offTimeEnd: nil))}
                             } else {
                                 //Log.verbose("GEOTIMER offTime \(offTime) occured after current date \(Date()), keeping offTime and doing nothing")
                                 // do nothing
@@ -1120,7 +1120,7 @@ extension CCLocationManager: StoreSubscriber {
                         }
                         
                         if newGEOState.offTime != nil {
-                            stateStore.dispatch(SetGEOOffTimeEnd(offTimeEnd: nil))
+                            DispatchQueue.main.async {self.stateStore.dispatch(SetGEOOffTimeEnd(offTimeEnd: nil))}
                         }
                     }
                 }
@@ -1223,7 +1223,7 @@ extension CCLocationManager: StoreSubscriber {
                 wakeupState = newWakeupNotificationState
                 //DDLogDebug("new state is: \(newWakeupNotificationState)")
                 if wakeupState.ccWakeup == CCWakeup.notifyWakeup{
-                    stateStore.dispatch(NotifyWakeupAction(ccWakeup: CCWakeup.idle))
+                    DispatchQueue.main.async {self.stateStore.dispatch(NotifyWakeupAction(ccWakeup: CCWakeup.idle))}
                 }
             }
         }
@@ -1252,7 +1252,7 @@ extension CCLocationManager: StoreSubscriber {
 
 extension CCLocationManager: CBCentralManagerDelegate {
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        stateStore.dispatch(BluetoothHardwareChangedAction(bluetoothHardware: central.centralManagerState))
+        DispatchQueue.main.async {self.stateStore.dispatch(BluetoothHardwareChangedAction(bluetoothHardware: central.centralManagerState))}
     }
 }
 

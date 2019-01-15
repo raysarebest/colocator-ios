@@ -458,7 +458,7 @@ extension CCSocket: SRWebSocketDelegate {
     
     public func webSocket(_ webSocket: SRWebSocket!, didReceiveMessage message: Any!) {
         
-        guard let ccRequestMessaging = self.ccRequestMessaging else{
+        guard let ccRequestMessaging = self.ccRequestMessaging else {
             return
         }
         
