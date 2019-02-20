@@ -112,7 +112,7 @@ class CCSocket:NSObject {
         }
     }
     
-    public func connect(timer: Timer?) {
+    @objc public func connect(timer: Timer?) {
 
         var certRef: SecCertificate?
         var certDataRef: CFData?
@@ -172,7 +172,7 @@ class CCSocket:NSObject {
         }
     }
     
-    public func stopCycler(timer: Timer){
+    @objc public func stopCycler(timer: Timer){
         if let ccLocationManager = self.ccLocationManager{
             ccLocationManager.stopAllLocationObservations()
         }
@@ -421,7 +421,7 @@ extension CCSocket: SRWebSocketDelegate {
         
         let aliases: Dictionary? = UserDefaults.standard.dictionary(forKey: CCSocketConstants.ALIAS_KEY)
         
-        if (aliases != nil){
+        if (aliases != nil) {
             ccRequestMessagingUnwrapped.processAliases(aliases: aliases! as! Dictionary<String, String>)
         }
         

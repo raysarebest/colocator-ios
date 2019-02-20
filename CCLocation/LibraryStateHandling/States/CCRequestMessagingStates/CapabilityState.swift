@@ -13,13 +13,13 @@ import CoreBluetooth
 public struct CapabilityState: StateType, AutoEquatable {
     var locationAuthStatus: CLAuthorizationStatus?
     var bluetoothHardware: CBCentralManagerState?
-    var batteryState: UIDeviceBatteryState?
+    var batteryState: UIDevice.BatteryState?
     var isLowPowerModeEnabled: Bool?
     var isLocationServicesAvailable: Bool?
     
     init(locationAuthStatus: CLAuthorizationStatus?,
          bluetoothHardware: CBCentralManagerState?,
-         batteryState: UIDeviceBatteryState?,
+         batteryState: UIDevice.BatteryState?,
          isLowPowerModeEnabled: Bool?,
          isLocationServicesEnabled: Bool?) {
         

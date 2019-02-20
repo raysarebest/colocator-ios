@@ -143,7 +143,7 @@ class CCLocationManager: NSObject, CLLocationManagerDelegate {
         }
     }
     
-    func startBeaconScanning() {
+    @objc func startBeaconScanning() {
         // start ibeacon scanning if enabled
         if let isIBeaconEnabledUnwrapped = currentBeaconState.isIBeaconRangingEnabled {
             if isIBeaconEnabledUnwrapped {
@@ -322,7 +322,7 @@ class CCLocationManager: NSObject, CLLocationManagerDelegate {
         }
     }
     
-    func stopLocationUpdates () {
+    @objc func stopLocationUpdates () {
         locationManager.stopUpdatingLocation()
         
         if (maxRunGEOTimer != nil) {
@@ -446,7 +446,7 @@ class CCLocationManager: NSObject, CLLocationManagerDelegate {
         }
     }
     
-    func processBeaconTables() {
+    @objc func processBeaconTables() {
         processiBeaconTable()
         processEddystoneBeaconTable()
     }
@@ -951,7 +951,7 @@ extension CCLocationManager {
                                 insert(beacon: beacon)
                             } else {
                                 if let timeIntervalSinceBoot = TimeHandling.getCurrentTimePeriodSince1970(stateStore: stateStore) {
-                                    delegate?.receivediBeaconInfo(proximityUUID: beacon.proximityUUID, major: Int(beacon.major), minor: Int(beacon.minor), proximity: beacon.proximity.rawValue, accuracy: beacon.accuracy, rssi: Int(beacon.rssi), timestamp: timeIntervalSinceBoot)
+                                    delegate?.receivediBeaconInfo(proximityUUID: beacon.proximityUUID, major: Int(truncating: beacon.major), minor: Int(truncating: beacon.minor), proximity: beacon.proximity.rawValue, accuracy: beacon.accuracy, rssi: Int(beacon.rssi), timestamp: timeIntervalSinceBoot)
                                 }
                             }
                         }
@@ -961,7 +961,7 @@ extension CCLocationManager {
                             insert(beacon: beacon)
                         } else {
                             if let timeIntervalSinceBoot = TimeHandling.getCurrentTimePeriodSince1970(stateStore: stateStore) {
-                                delegate?.receivediBeaconInfo(proximityUUID: beacon.proximityUUID, major: Int(beacon.major), minor: Int(beacon.minor), proximity: beacon.proximity.rawValue, accuracy: beacon.accuracy, rssi: Int(beacon.rssi), timestamp: timeIntervalSinceBoot)
+                                delegate?.receivediBeaconInfo(proximityUUID: beacon.proximityUUID, major: Int(truncating: beacon.major), minor: Int(truncating: beacon.minor), proximity: beacon.proximity.rawValue, accuracy: beacon.accuracy, rssi: Int(beacon.rssi), timestamp: timeIntervalSinceBoot)
                             }
                         }
                     }

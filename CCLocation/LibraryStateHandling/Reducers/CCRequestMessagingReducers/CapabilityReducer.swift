@@ -22,7 +22,7 @@ struct CapabilityReducerConstants {
 private typealias C = CapabilityReducerConstants
 
 func capabilityReducer (action: Action, state: CapabilityState?) -> CapabilityState {
-    var state = CapabilityState(locationAuthStatus: CLAuthorizationStatus.notDetermined, bluetoothHardware: CBCentralManagerState.unknown, batteryState: UIDeviceBatteryState.unknown, isLowPowerModeEnabled: false, isLocationServicesEnabled: false)
+    var state = CapabilityState(locationAuthStatus: CLAuthorizationStatus.notDetermined, bluetoothHardware: CBCentralManagerState.unknown, batteryState: UIDevice.BatteryState.unknown, isLowPowerModeEnabled: false, isLocationServicesEnabled: false)
     
     if let loadedCapabilityState = getCapabilityStateFromUserDefaults() {
         state = loadedCapabilityState
@@ -60,7 +60,7 @@ func getCapabilityStateFromUserDefaults () -> CapabilityState? {
         
         var locationAuthStatus:CLAuthorizationStatus?
         var bluetoothHardware:CBCentralManagerState?
-        var batteryState:UIDeviceBatteryState?
+        var batteryState:UIDevice.BatteryState?
         
         if let authStateRaw = dictionary?[C.locationAuthStatus] {
             locationAuthStatus = CLAuthorizationStatus(rawValue: authStateRaw as! Int32)
@@ -70,7 +70,7 @@ func getCapabilityStateFromUserDefaults () -> CapabilityState? {
             bluetoothHardware = CBCentralManagerState(rawValue: bluetoothHardwareRaw as! Int)
         }
         if let batteryStateRaw = dictionary?[C.batteryState] {
-            batteryState = UIDeviceBatteryState(rawValue: batteryStateRaw as! Int)
+            batteryState = UIDevice.BatteryState(rawValue: batteryStateRaw as! Int)
         }
 
         return CapabilityState(locationAuthStatus: locationAuthStatus, bluetoothHardware: bluetoothHardware, batteryState: batteryState, isLowPowerModeEnabled: dictionary?[C.isLowPowerModeEnabled] as? Bool, isLocationServicesEnabled: dictionary?[C.isLocationServicesEnabled] as? Bool)

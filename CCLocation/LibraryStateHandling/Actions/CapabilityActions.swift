@@ -11,7 +11,7 @@ import CoreLocation
 import CoreBluetooth
 
 struct BatteryStateChangedAction : Action {
-    let batteryState : UIDeviceBatteryState
+    let batteryState : UIDevice.BatteryState
 }
 
 struct LocationAuthStatusChangedAction : Action {

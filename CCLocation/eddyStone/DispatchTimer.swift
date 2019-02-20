@@ -65,7 +65,7 @@ class DispatchTimer: NSObject {
     }
     
     func reschedule() {
-        self.source.scheduleOneshot(deadline: .now() + self.delay)
+        self.source.schedule(deadline: .now() + self.delay)
     }
     
     func suspend() {
