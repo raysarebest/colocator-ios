@@ -1,5 +1,5 @@
-github "ReSwift/ReSwift" "4.0.1"
-github "antitypical/Result" "3.2.3"
+github "ReSwift/ReSwift" "5b7a5c6cd05fa2b7d3f68ef7765acb2ba696d83c"
+github "antitypical/Result" "4.1.0"
 github "apple/swift-protobuf" "1.2.0"
 github "facebook/SocketRocket" "0.4.2"
-github "instacart/TrueTime.swift" "d8ed81dab32486453c4197787cf197d46b94f0a6"
+github "instacart/TrueTime.swift" "5.0.0"
