@@ -1553,8 +1553,11 @@ extension CCRequestMessaging: StoreSubscriber {
                 
                 if webSocketState.connectionState == ConnectionState.online {
                     
-                    //DDLogDebug ("we are online")
+                    let aliases: Dictionary? = UserDefaults.standard.dictionary(forKey: CCSocketConstants.ALIAS_KEY)
                     
+                    if (aliases != nil){
+                        processAliases(aliases: aliases! as! Dictionary<String, String>)
+                    }
                 }
             }
         }

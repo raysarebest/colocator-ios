@@ -418,13 +418,7 @@ extension CCSocket: SRWebSocketDelegate {
         ccRequestMessagingUnwrapped.webSocketDidOpen()
         
         delay = CCSocketConstants.MIN_DELAY
-        
-        let aliases: Dictionary? = UserDefaults.standard.dictionary(forKey: CCSocketConstants.ALIAS_KEY)
-        
-        if (aliases != nil) {
-            ccRequestMessagingUnwrapped.processAliases(aliases: aliases! as! Dictionary<String, String>)
-        }
-        
+                
         if let timer = maxCycleTimer {
             timer.invalidate()
         }
