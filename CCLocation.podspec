@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name                  = 'CCLocation'
-  s.version               = '2.1.1'
+  s.version               = '2.1.2'
   s.summary               = 'The CrowdConnected colocator iOS library'
   s.homepage              = 'https://github.com/crowdconnected/colocator-ios.git'
   s.social_media_url      = 'https://twitter.com/crowdconnected'
@@ -22,6 +22,6 @@ Pod::Spec.new do |s|
   s.dependency 'SocketRocket', '0.4.2'
   s.dependency 'SwiftProtobuf', '1.2.0'
   s.dependency 'ReSwift', '4.0.1'
-  s.dependency 'TrueTime', '4.1.5'
-  s.dependency 'Result', '3.2.3'
+  s.dependency 'TrueTime', '5.0.0'
+  s.dependency 'Result', '4.1.0'
 end

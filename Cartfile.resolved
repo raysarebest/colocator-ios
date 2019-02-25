@@ -1,4 +1,4 @@
-github "ReSwift/ReSwift" "5b7a5c6cd05fa2b7d3f68ef7765acb2ba696d83c"
+github "ReSwift/ReSwift" "4.0.1"
 github "antitypical/Result" "4.1.0"
 github "apple/swift-protobuf" "1.2.0"
 github "facebook/SocketRocket" "0.4.2"
