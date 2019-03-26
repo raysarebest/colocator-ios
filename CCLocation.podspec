@@ -23,5 +23,5 @@ Pod::Spec.new do |s|
   s.dependency 'SwiftProtobuf', '1.2.0'
   s.dependency 'ReSwift', '4.0.1'
   s.dependency 'TrueTime', '5.0.0'
-  s.dependency 'ReachabilitySwift', '4.3.1'
+  s.dependency 'ReachabilitySwift', '4.3.0'
 end
