@@ -776,6 +776,8 @@ class CCRequestMessaging: NSObject {
                 capabilityMessage.locationAuthStatus = Messaging_IosCapability.LocationAuthStatus.notDetermined
             case .restricted:
                 capabilityMessage.locationAuthStatus = Messaging_IosCapability.LocationAuthStatus.restricted
+            @unknown default:
+                capabilityMessage.locationAuthStatus = Messaging_IosCapability.LocationAuthStatus.notDetermined
             }
         }
         
@@ -793,6 +795,8 @@ class CCRequestMessaging: NSObject {
                 capabilityMessage.bluetoothHardware = Messaging_IosCapability.BluetoothHardware.unknown
             case .unsupported:
                 capabilityMessage.bluetoothHardware = Messaging_IosCapability.BluetoothHardware.unsupported
+            @unknown default:
+                capabilityMessage.bluetoothHardware = Messaging_IosCapability.BluetoothHardware.unknown
             }
         }
         
@@ -806,6 +810,8 @@ class CCRequestMessaging: NSObject {
                 capabilityMessage.batteryState = Messaging_IosCapability.BatteryState.notDefined
             case .unplugged:
                 capabilityMessage.batteryState = Messaging_IosCapability.BatteryState.unplugged
+            @unknown default:
+                capabilityMessage.batteryState = Messaging_IosCapability.BatteryState.notDefined
             }
         }
         

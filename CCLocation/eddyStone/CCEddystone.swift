@@ -63,14 +63,7 @@ class BeaconID : NSObject {
 }
 
 func ==(lhs: BeaconID, rhs: BeaconID) -> Bool {
-    if lhs == rhs {
-        return true;
-    } else if lhs.beaconType == rhs.beaconType
-        && rhs.beaconID == rhs.beaconID {
-        return true;
-    }
-    
-    return false;
+    return lhs.beaconType == rhs.beaconType && rhs.beaconID == rhs.beaconID
 }
 
 ///

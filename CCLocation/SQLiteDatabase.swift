@@ -327,8 +327,8 @@ extension SQLiteDatabase {
             
             for message in messagesBuffer {
                 if #available(iOS 9.0, *) {
-                    guard message.observation.withUnsafeBytes({ (bytes: UnsafePointer<UInt8>) -> Int32 in
-                        sqlite3_bind_blob64(insertStatement, 1, bytes, sqlite3_uint64(message.observation.count), nil)
+                    guard message.observation.withUnsafeBytes({ (bytes: UnsafeRawBufferPointer) -> Int32 in
+                        sqlite3_bind_blob64(insertStatement, 1, bytes.baseAddress, sqlite3_uint64(message.observation.count), nil)
                     }) == SQLITE_OK else {
                         throw SQLiteError.Bind(message: errorMessage)
                     }

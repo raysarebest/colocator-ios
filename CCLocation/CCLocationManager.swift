@@ -1039,6 +1039,8 @@ extension CCLocationManager {
             }
             
             break
+        @unknown default:
+            break
         }
     }
 }

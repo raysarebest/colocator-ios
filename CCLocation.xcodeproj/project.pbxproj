@@ -78,11 +78,11 @@
 		4FFAA5931EF6868900A2D508 /* ReSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4FFAA5921EF6868900A2D508 /* ReSwift.framework */; };
 		4FFAA5951EF688CD00A2D508 /* LibraryState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFAA5941EF688CD00A2D508 /* LibraryState.swift */; };
 		4FFAA5991EF689ED00A2D508 /* LibraryReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFAA5981EF689ED00A2D508 /* LibraryReducer.swift */; };
+		987A0A5D224AD19C004072B0 /* Reachability.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 987A0A5C224AD19C004072B0 /* Reachability.framework */; };
 		BC0647AF218757A500555512 /* CCBeaconScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0647AE218757A500555512 /* CCBeaconScanner.swift */; };
 		BC0647B1218757B900555512 /* CCEddystone.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0647B0218757B900555512 /* CCEddystone.swift */; };
 		BC0647B5218757E200555512 /* DispatchTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0647B4218757E200555512 /* DispatchTimer.swift */; };
 		BC9DEB7A2124160B0015C5CF /* CCSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9DEB792124160B0015C5CF /* CCSocket.swift */; };
-		BC9DEB7C212425680015C5CF /* Reachability.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9DEB7B212425680015C5CF /* Reachability.swift */; };
 		BC9DEB7E212429B10015C5CF /* ReachabilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9DEB7D212429B10015C5CF /* ReachabilityManager.swift */; };
 		F0AF0C421DB3912700E72E76 /* CCLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0AF0C381DB3912700E72E76 /* CCLocation.framework */; };
 		F0AF0C471DB3912700E72E76 /* CCLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0AF0C461DB3912700E72E76 /* CCLocationTests.swift */; };
@@ -185,11 +185,11 @@
 		4FFAA5921EF6868900A2D508 /* ReSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ReSwift.framework; path = Carthage/Build/iOS/ReSwift.framework; sourceTree = "<group>"; };
 		4FFAA5941EF688CD00A2D508 /* LibraryState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibraryState.swift; sourceTree = "<group>"; };
 		4FFAA5981EF689ED00A2D508 /* LibraryReducer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibraryReducer.swift; sourceTree = "<group>"; };
+		987A0A5C224AD19C004072B0 /* Reachability.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Reachability.framework; path = Carthage/Build/iOS/Reachability.framework; sourceTree = "<group>"; };
 		BC0647AE218757A500555512 /* CCBeaconScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CCBeaconScanner.swift; path = CCLocation/CCBeaconScanner.swift; sourceTree = SOURCE_ROOT; };
 		BC0647B0218757B900555512 /* CCEddystone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CCEddystone.swift; sourceTree = "<group>"; };
 		BC0647B4218757E200555512 /* DispatchTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchTimer.swift; sourceTree = "<group>"; };
 		BC9DEB792124160B0015C5CF /* CCSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CCSocket.swift; sourceTree = "<group>"; };
-		BC9DEB7B212425680015C5CF /* Reachability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reachability.swift; sourceTree = "<group>"; };
 		BC9DEB7D212429B10015C5CF /* ReachabilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReachabilityManager.swift; sourceTree = "<group>"; };
 		F0AF0C381DB3912700E72E76 /* CCLocation.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CCLocation.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0AF0C3B1DB3912700E72E76 /* CCLocation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CCLocation.h; sourceTree = "<group>"; };
@@ -210,6 +210,7 @@
 				4F8FFD761F292DD00001910A /* libsqlite3.tbd in Frameworks */,
 				F0AF0C5D1DB3ADA400E72E76 /* Foundation.framework in Frameworks */,
 				4FD6F9161F2608DA00079FA2 /* Result.framework in Frameworks */,
+				987A0A5D224AD19C004072B0 /* Reachability.framework in Frameworks */,
 				4FD05EFC1F25F83000EC1CC8 /* TrueTime.framework in Frameworks */,
 				4F8DF0DC1EDDB15F00165F18 /* SocketRocket.framework in Frameworks */,
 				4FFAA5931EF6868900A2D508 /* ReSwift.framework in Frameworks */,
@@ -397,7 +398,6 @@
 				4FF6BA652105EA430082859F /* Logger.swift */,
 				F0AF0C3C1DB3912700E72E76 /* Info.plist */,
 				BC9DEB792124160B0015C5CF /* CCSocket.swift */,
-				BC9DEB7B212425680015C5CF /* Reachability.swift */,
 				BC9DEB7D212429B10015C5CF /* ReachabilityManager.swift */,
 			);
 			path = CCLocation;
@@ -416,6 +416,7 @@
 			isa = PBXGroup;
 			children = (
 				4F8FFD741F292D950001910A /* libsqlite3.tbd */,
+				987A0A5C224AD19C004072B0 /* Reachability.framework */,
 				4FD6F9151F2608DA00079FA2 /* Result.framework */,
 				4FD05EFB1F25F82F00EC1CC8 /* TrueTime.framework */,
 				4FFAA5921EF6868900A2D508 /* ReSwift.framework */,
@@ -583,7 +584,6 @@
 				4FBB8A8F1F30B92500DEF04F /* ForegroundLocationState.swift in Sources */,
 				4F8FFD851F2C7D420001910A /* WebSocketReducer.swift in Sources */,
 				BC0647AF218757A500555512 /* CCBeaconScanner.swift in Sources */,
-				BC9DEB7C212425680015C5CF /* Reachability.swift in Sources */,
 				4FBB8A9E1F30D07B00DEF04F /* CurrentBeaconState.swift in Sources */,
 				4F8FFD8B1F2CCA660001910A /* TimerReducer.swift in Sources */,
 				4FA524DB1F4050F90067D2C8 /* MessagingProtocol.pb.swift in Sources */,
