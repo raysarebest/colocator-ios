@@ -494,7 +494,7 @@ extension SQLiteDatabase {
         
         let deleteMessagesSQL = "DELETE FROM \(beaconTable);"
         
-        guard let deleteMessagesStatement = try? prepareStatement(sql: deleteMessagesSQL) else {
+        guard let deleteMessagesStatement = ((try? prepareStatement(sql: deleteMessagesSQL)) as OpaquePointer??) else {
             throw SQLiteError.Prepare(message: errorMessage)
         }
         
@@ -517,7 +517,7 @@ extension SQLiteDatabase {
             
             let resetAutoincrementSql = "DELETE FROM sqlite_sequence WHERE name = '\(table)';"
             
-            guard let resetAutoincrementStatement = try? prepareStatement(sql: resetAutoincrementSql) else {
+            guard let resetAutoincrementStatement = ((try? prepareStatement(sql: resetAutoincrementSql)) as OpaquePointer??) else {
                 throw SQLiteError.Prepare(message: errorMessage)
             }
             
@@ -537,7 +537,7 @@ extension SQLiteDatabase {
         let querySql = "SELECT * FROM \(CCLocationTables.IBEACON_MESSAGES_TABLE) ORDER BY ID ASC;"
         var beacons:[Beacon]?
         
-        guard let queryStatement = try? prepareStatement(sql: querySql) else {
+        guard let queryStatement = ((try? prepareStatement(sql: querySql)) as OpaquePointer??) else {
             throw SQLiteError.Prepare(message: errorMessage)
         }
         
@@ -573,7 +573,7 @@ extension SQLiteDatabase {
         let querySql = "SELECT * FROM \(CCLocationTables.EDDYSTONE_BEACON_MESSAGES_TABLE) ORDER BY ID ASC;"
         var beacons:[EddystoneBeacon]?
         
-        guard let queryStatement = try? prepareStatement(sql: querySql) else {
+        guard let queryStatement = ((try? prepareStatement(sql: querySql)) as OpaquePointer??) else {
             throw SQLiteError.Prepare(message: errorMessage)
         }
         
@@ -607,7 +607,7 @@ extension SQLiteDatabase {
         
         let querySql = "SELECT COUNT(*) FROM " + table + ";"
         
-        guard let queryStatement = try? prepareStatement(sql: querySql) else {
+        guard let queryStatement = ((try? prepareStatement(sql: querySql)) as OpaquePointer??) else {
             throw SQLiteError.Prepare(message: errorMessage)
         }
         

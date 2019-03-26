@@ -1341,7 +1341,7 @@ class CCRequestMessaging: NSObject {
                     }
                 }
                 
-                if let index = self?.workItems.index(where: {$0 === workItem!}) {
+                if let index = self?.workItems.firstIndex(where: {$0 === workItem!}) {
                     self?.workItems.remove(at: index)
                 }
                 
